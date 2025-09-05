@@ -14,8 +14,8 @@
 
 package org.swift.swiftkit.core.annotations;
 
-import jdk.jfr.Description;
-import jdk.jfr.Label;
+// import jdk.jfr.Description;
+// import jdk.jfr.Label;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -34,8 +34,8 @@ import static java.lang.annotation.ElementType.*;
  * larger than {@code Long.MAX_VALUE} that are just not representable using a signed {@code long}.
  */
 @Documented
-@Label("Unsigned integer type")
-@Description("Value should be interpreted as unsigned data type")
+// @Label("Unsigned integer type")
+// @Description("Value should be interpreted as unsigned data type")
 @Target({TYPE_USE, PARAMETER, FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Unsigned {

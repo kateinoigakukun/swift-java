@@ -14,8 +14,8 @@
 
 package org.swift.swiftkit.core.annotations;
 
-import jdk.jfr.Description;
-import jdk.jfr.Label;
+// import jdk.jfr.Description;
+// import jdk.jfr.Label;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -34,8 +34,8 @@ import static java.lang.annotation.ElementType.*;
  * @see <a href="https://developer.apple.com/documentation/Swift/Sendable">Swift Sendable API documentation</a>.
  */
 @Documented
-@Label("Thread-safe")
-@Description("Value should be interpreted as safe to be shared across threads.")
+// @Label("Thread-safe")
+// @Description("Value should be interpreted as safe to be shared across threads.")
 @Target({TYPE_USE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ThreadSafe {
