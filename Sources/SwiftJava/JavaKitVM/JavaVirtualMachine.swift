@@ -64,6 +64,9 @@ public final class JavaVirtualMachine: @unchecked Sendable {
     vmOptions: [String] = [],
     ignoreUnrecognized: Bool = false
   ) throws {
+    #if canImport(Android)
+    throw VMError.existingVM // FIXME: we don't support creating a JVM on Android
+    #else
     self.classpath = classpath
     var jvm: JavaVMPointer? = nil
     var environment: JNIEnvPointer? = nil
@@ -115,6 +118,7 @@ public final class JavaVirtualMachine: @unchecked Sendable {
 
     self.jvm = jvm!
     self.destroyOnDeinit = .init(initialState: true)
+    #endif
   }
 
   public func destroyJVM() throws {
@@ -237,6 +241,9 @@ extension JavaVirtualMachine {
     ignoreUnrecognized: Bool = false,
     replace: Bool = false
   ) throws -> JavaVirtualMachine {
+    #if canImport(Android)
+    throw VMError.existingVM // FIXME: we don't support creating a JVM on Android
+    #else
     precondition(!classpath.contains(where: { $0.contains(":") }), "Classpath element must not contain `:`! Split the path into elements! Was: \(classpath)")
 
     return try sharedJVM.withLock { (sharedJVMPointer: inout JavaVirtualMachine?) in
@@ -293,6 +300,7 @@ extension JavaVirtualMachine {
         }
       }
     }
+    #endif
   }
 
   /// "Forget" the shared JavaVirtualMachine instance.
