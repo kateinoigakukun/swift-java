@@ -330,6 +330,7 @@ extension SwiftFunctionSignature {
 
   public init(
     _ varNode: VariableDeclSyntax,
+    binding explicitBinding: PatternBindingSyntax? = nil,
     isSet: Bool,
     enclosingType: SwiftType?,
     lookupContext: SwiftTypeLookupContext
@@ -341,8 +342,16 @@ extension SwiftFunctionSignature {
       isSet: isSet
     )
 
-    guard let binding = varNode.bindings.first, varNode.bindings.count == 1 else {
-      throw SwiftFunctionTranslationError.multipleBindings(varNode)
+    // A declaration can bind several variables (`var a: Int, b: String`);
+    // callers extracting a specific one pass its binding explicitly.
+    let binding: PatternBindingSyntax
+    if let explicitBinding {
+      binding = explicitBinding
+    } else {
+      guard let firstBinding = varNode.bindings.first, varNode.bindings.count == 1 else {
+        throw SwiftFunctionTranslationError.multipleBindings(varNode)
+      }
+      binding = firstBinding
     }
 
     guard let varTypeNode = binding.typeAnnotation?.type else {

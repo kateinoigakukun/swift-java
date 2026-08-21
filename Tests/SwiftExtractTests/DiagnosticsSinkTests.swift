@@ -73,6 +73,47 @@ struct DiagnosticsSinkSuite {
     #expect(variable.node.is(VariableDeclSyntax.self))
   }
 
+  @Test func skippedExtensionsAreReported() throws {
+    let sink = CollectingDiagnosticsSink()
+    _ = try analyze(
+      sources: [
+        (
+          "/fake/Source.swift",
+          """
+          extension NoSuchType {
+            public func swim() {}
+          }
+          """
+        )
+      ],
+      moduleName: "Aquarium",
+      diagnosticsSink: sink
+    )
+    let diagnostic = try #require(sink.diagnostics.first)
+    #expect(diagnostic.kind == .skippedDeclaration)
+    #expect(diagnostic.node.is(ExtensionDeclSyntax.self))
+    #expect(diagnostic.message.contains("NoSuchType"))
+  }
+
+  @Test func multipleBindingsExtractEachVariable() throws {
+    let result = try analyze(
+      sources: [
+        (
+          "/fake/Source.swift",
+          """
+          public class Tank {
+            public var width: Int = 0, height: Int = 0
+          }
+          """
+        )
+      ],
+      moduleName: "Aquarium"
+    )
+    let tank = try #require(result.extractedTypes["Tank"])
+    let names = tank.variables.map(\.name)
+    #expect(names == ["width", "width", "height", "height"])  // getter+setter each
+  }
+
   @Test func noEventsWhenEverythingExtracts() throws {
     let sink = CollectingDiagnosticsSink()
     _ = try analyze(

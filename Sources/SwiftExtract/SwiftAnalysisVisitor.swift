@@ -133,6 +133,21 @@ final class SwiftAnalysisVisitor {
       return
     }
     guard let extractedNominalType = analyzer.extractedNominalType(node.extendedType) else {
+      // The extended type didn't resolve or isn't extracted; report so
+      // consumers can decide whether that is an error (e.g. when the
+      // extension contains declarations they were told to extract).
+      analyzer.diagnosticsSink?.emit(
+        SwiftExtractDiagnostic(
+          kind: .skippedDeclaration,
+          declarationName: "extension \(node.extendedType.trimmedDescription)",
+          moduleName: analyzer.swiftModuleName,
+          message:
+            "Skipped extension of '\(node.extendedType.trimmedDescription)' in module '\(analyzer.swiftModuleName)': the extended type is not extracted",
+          node: Syntax(node),
+          sourceFilePath: sourceFilePath,
+          underlyingError: nil
+        )
+      )
       return
     }
 
@@ -301,44 +316,44 @@ final class SwiftAnalysisVisitor {
       return
     }
 
-    guard let binding = node.bindings.first else {
-      return
-    }
+    for binding in node.bindings {
+      let varName = "\(binding.pattern.trimmed)"
 
-    let varName = "\(binding.pattern.trimmed)"
+      self.log.debug("Import variable: \(node.kind) '\(node.qualifiedNameForDebug)' binding '\(varName)'")
 
-    self.log.debug("Import variable: \(node.kind) '\(node.qualifiedNameForDebug)'")
-
-    do {
-      let supportedAccessors = node.supportedAccessorKinds(
-        binding: binding,
-        minimumAccessLevel: config.effectiveMinimumInputAccessLevelMode,
-      )
-      if supportedAccessors.contains(.get) {
-        try importAccessor(
-          from: DeclSyntax(node),
-          in: typeContext,
-          kind: .getter,
-          name: varName,
+      do {
+        let supportedAccessors = node.supportedAccessorKinds(
+          binding: binding,
+          minimumAccessLevel: config.effectiveMinimumInputAccessLevelMode,
+        )
+        if supportedAccessors.contains(.get) {
+          try importAccessor(
+            from: DeclSyntax(node),
+            binding: binding,
+            in: typeContext,
+            kind: .getter,
+            name: varName,
+            sourceFilePath: sourceFilePath,
+          )
+        }
+        if supportedAccessors.contains(.set) {
+          try importAccessor(
+            from: DeclSyntax(node),
+            binding: binding,
+            in: typeContext,
+            kind: .setter,
+            name: varName,
+            sourceFilePath: sourceFilePath,
+          )
+        }
+      } catch {
+        self.reportSkipped(
+          node,
+          name: "\(node.qualifiedNameForDebug)",
           sourceFilePath: sourceFilePath,
+          error: error
         )
       }
-      if supportedAccessors.contains(.set) {
-        try importAccessor(
-          from: DeclSyntax(node),
-          in: typeContext,
-          kind: .setter,
-          name: varName,
-          sourceFilePath: sourceFilePath,
-        )
-      }
-    } catch {
-      self.reportSkipped(
-        node,
-        name: "\(node.qualifiedNameForDebug)",
-        sourceFilePath: sourceFilePath,
-        error: error
-      )
     }
   }
 
@@ -456,6 +471,7 @@ final class SwiftAnalysisVisitor {
 
   private func importAccessor(
     from node: DeclSyntax,
+    binding: PatternBindingSyntax? = nil,
     in typeContext: ExtractedNominalType?,
     kind: SwiftAPIKind,
     name: String,
@@ -467,6 +483,7 @@ final class SwiftAnalysisVisitor {
     case .variableDecl(let varNode):
       signature = try SwiftFunctionSignature(
         varNode,
+        binding: binding,
         isSet: kind == .setter,
         enclosingType: typeContext?.swiftType,
         lookupContext: analyzer.lookupContext,
