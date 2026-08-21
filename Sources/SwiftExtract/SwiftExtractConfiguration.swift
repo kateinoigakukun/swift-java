@@ -46,6 +46,12 @@ public protocol SwiftExtractConfiguration {
   /// as if they belonged to that module.
   var importedModuleStubs: [String: [String]]? { get }
 
+  /// Structured descriptions of types living in other modules, keyed by module
+  /// name. A typed alternative to `importedModuleStubs` for consumers that
+  /// already hold a serialized description of their dependency modules;
+  /// entries for the same module combine with any string stubs.
+  var externalTypeDeclarations: [String: [ExternalTypeDeclaration]]? { get }
+
   /// Minimum access level required for a declaration to be extracted.
   var effectiveMinimumInputAccessLevelMode: AccessLevelMode { get }
 
@@ -95,6 +101,8 @@ extension SwiftExtractConfiguration {
 
   public var unresolvedTypeHint: String? { nil }
 
+  public var externalTypeDeclarations: [String: [ExternalTypeDeclaration]]? { nil }
+
   public func hasImportedModuleStub(moduleOfNominal moduleName: String) -> Bool {
     importedModuleStubs?.keys.contains(moduleName) ?? false
   }
@@ -109,6 +117,7 @@ public struct DefaultSwiftExtractConfiguration: SwiftExtractConfiguration {
   public var swiftFilterInclude: [String]?
   public var swiftFilterExclude: [String]?
   public var importedModuleStubs: [String: [String]]?
+  public var externalTypeDeclarations: [String: [ExternalTypeDeclaration]]?
   public var effectiveMinimumInputAccessLevelMode: AccessLevelMode
   public var logLevel: LogLevel?
   public var availableImportModules: Set<String>
@@ -122,6 +131,7 @@ public struct DefaultSwiftExtractConfiguration: SwiftExtractConfiguration {
     swiftFilterInclude: [String]? = nil,
     swiftFilterExclude: [String]? = nil,
     importedModuleStubs: [String: [String]]? = nil,
+    externalTypeDeclarations: [String: [ExternalTypeDeclaration]]? = nil,
     availableImportModules: Set<String> = [],
     allowUnresolvedTypeReferences: Bool = false
   ) {
@@ -132,6 +142,7 @@ public struct DefaultSwiftExtractConfiguration: SwiftExtractConfiguration {
     self.swiftFilterInclude = swiftFilterInclude
     self.swiftFilterExclude = swiftFilterExclude
     self.importedModuleStubs = importedModuleStubs
+    self.externalTypeDeclarations = externalTypeDeclarations
     self.availableImportModules = availableImportModules
     self.allowUnresolvedTypeReferences = allowUnresolvedTypeReferences
   }

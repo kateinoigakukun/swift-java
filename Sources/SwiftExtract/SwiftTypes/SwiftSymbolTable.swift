@@ -155,10 +155,17 @@ extension SwiftSymbolTable {
       )
     }
 
-    // Load stub type declarations for imported modules from config.
+    // Load stub type declarations for imported modules from config, combining
+    // string stubs with any structured external type declarations.
     // This enables types from external modules (e.g. extension targets) to be
     // resolved in the symbol table without scanning their actual source.
-    if let stubs = config?.importedModuleStubs {
+    var stubs: [String: [String]] = config?.importedModuleStubs ?? [:]
+    if let external = config?.externalTypeDeclarations {
+      for (moduleName, declarations) in external {
+        stubs[moduleName, default: []] += declarations.stubSourceDeclarations()
+      }
+    }
+    if !stubs.isEmpty {
       for (stubModuleName, declarations) in stubs {
         if importedModules[stubModuleName] == nil {
           let source = declarations.joined(separator: "\n")
